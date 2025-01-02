@@ -14,7 +14,7 @@ const dbconnection = require('./db/dbConfig');
 
 const app = express();
 const cors = require("cors");
-const port = 3004
+const port = process.env.PORT || 3004;
 
 
 // sample to test the server is working
@@ -55,9 +55,9 @@ async function start() {
     // const [result] = await dbconnection.query("SELECT 'test' AS result");
 
         console.log(result)
-       await app.listen(port)
-        console.log("database connection established")
-        console.log(`listing on ${port}`)
+        app.listen(port, () => {
+          console.log(`Server is running on http://localhost:${port}`);
+        });
      } catch (error) {
          console.log(error.message);
          
