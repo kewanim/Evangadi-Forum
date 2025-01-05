@@ -1,53 +1,48 @@
-require('dotenv').config(); // Load environment variables
+require("dotenv").config(); // Load environment variables
+const express = require("express");
+const cors = require("cors");
 
-// Import necessary modules
-const express = require('express');
-const cors = require('cors');
+// Import Firestore configuration
+const db = require("./db/dbConfig"); // Firestore connection
 
-// Database connection
-const dbconnection = require('./db/dbConfig');
+// Import routes
+const userRoutes = require("./routes/userRoute");
+const questionRoutes = require("./routes/questionRoute");
+const answerRoutes = require("./routes/answerRoute");
 
-// Create an Express application
+// Create Express app
 const app = express();
-
-// Set port number dynamically for Render deployment
 const port = process.env.PORT || 3004;
 
-// Enable CORS for specified origins
-app.use(
-  cors({
-    origin: ["http://localhost:5173"], // Add more origins as needed
-  })
-);
-
-// Middleware to parse JSON data
+// Middleware
+app.use(cors());
 app.use(express.json());
 
-// Import route files
-const userRoutes = require("./routes/userRoute");
-const questionRoute = require("./routes/questionRoute");
-const answerRoute = require("./routes/answerRoute");
+// Routes middleware
+app.use("/api/users", userRoutes); // User routes
+app.use("/api/questions", questionRoutes); // Question routes
+app.use("/api/answers", answerRoutes); // Answer routes
 
-// Define API routes
-app.use("/api/users", userRoutes);
-app.use("/api", questionRoute);
-app.use("/api", answerRoute);
-
-// Start the server and handle database connection
-async function start() {
+// Test Firestore Connection
+const { collection, getDocs } = require("firebase/firestore");
+app.get("/test", async (req, res) => {
   try {
-    // Test database connection
-    const result = await dbconnection.execute("SELECT 'test' ");
-    console.log(result);
-
-    // Explicitly bind to 0.0.0.0 for Render compatibility
-    app.listen(port, '0.0.0.0', () => {
-      console.log(`Server is running on http://localhost:${port}`);
-    });
+    const usersCollection = collection(db, "users");
+    const snapshot = await getDocs(usersCollection);
+    const users = snapshot.docs.map((doc) => doc.data());
+    res.status(200).json(users);
   } catch (error) {
-    console.error("Database connection error:", error.message);
+    console.error("Firestore connection error:", error);
+    res.status(500).send("Error connecting to Firestore.");
   }
-}
+});
 
-// Initialize the server
-start();
+// Home Route
+app.get("/", (req, res) => {
+  res.send("Server is running!");
+});
+
+// Start server
+app.listen(port, () => {
+  console.log(`Server is running at http://localhost:${port}`);
+});
