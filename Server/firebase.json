@@ -16,8 +16,8 @@
       ]
     }
   ],
-  "hosting": {
-    "public": "public/dist2",
+ "hosting": {
+    "public": "../Client/dist",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -29,5 +29,8 @@
         "destination": "/index.html"
       }
     ]
+  },
+  "functions": {
+    "source": "."
+      }
   }
-}

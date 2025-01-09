@@ -1,50 +1,43 @@
-const { onRequest } = require("firebase-functions/v2/https");
+const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const cors = require("cors")({ origin: true });
 
-// Initialize Firebase Admin SDK
 admin.initializeApp();
-const db = admin.firestore();
 
-// Register User API
-exports.registerUser = onRequest(async (req, res) => {
-  try {
-    // Only allow POST requests
+exports.registerUser = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
     if (req.method !== "POST") {
-      return res.status(405).send({ error: "Method Not Allowed" });
+      return res.status(405).send("Method Not Allowed");
     }
 
-    // Parse user input
     const { username, firstname, lastname, email, password } = req.body;
 
     if (!username || !firstname || !lastname || !email || !password) {
-      return res.status(400).send({ error: "All fields are required!" });
+      return res.status(400).send("All fields are required");
     }
 
-    // Check if user already exists
-    const userSnapshot = await db.collection("users").where("email", "==", email).get();
-    if (!userSnapshot.empty) {
-      return res.status(400).send({ error: "User already exists!" });
+    try {
+      const newUser = {
+        username,
+        firstname,
+        lastname,
+        email,
+        password,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+
+      await admin.firestore().collection("users").add(newUser);
+      res.status(201).send({ message: "User registered successfully!" });
+    } catch (err) {
+      console.error(err);
+      res.status(500).send("Something went wrong!");
     }
-
-    // Store user in Firestore
-    const newUser = {
-      username,
-      firstname,
-      lastname,
-      email,
-      password, // Encrypt this in a real app!
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    };
-    await db.collection("users").add(newUser);
-
-    res.status(201).send({ msg: "User registered successfully!" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send({ error: "Something went wrong!" });
-  }
+  });
 });
 
-// Test Endpoint
-exports.helloWorld = onRequest((req, res) => {
-  res.send("Hello from Firebase!");
+// Test Endpoint to Check Deployment
+exports.helloWorld = functions.https.onRequest((req, res) => {
+  cors(req, res, () => {
+    res.send("Hello from Firebase!");
+  });
 });
